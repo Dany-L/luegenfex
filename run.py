@@ -11,7 +11,6 @@ import datetime
 # now = datetime.datetime.now()
 # handleMongoDb.insertDict(weatherDataDict,"weatherData", "date_" + now.strftime("%d_%m_%Y"))
 
-wetterringList = ["diedamskopf","mellau-rossstelle"]
+wetterringList = ["mellau-rossstelle"]
 oWetterringRequest = handleRequest.handleWetterringRequest()
 stationData = oWetterringRequest.getWeatherStationDataList(wetterringList)
-print(stationData)

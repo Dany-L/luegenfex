@@ -128,31 +128,37 @@ class handleWetterringRequest:
 
         dataIdBasis = "237"
 
-        descDataId = ["temp","rainfall","","wind","humidity","","airPressure","",""]
+        descDataId = ["temp","rainfall","dewPoint","wind","humidity","windDirection","airPressure"]
         regeexpList = [
             "(-\d\d,\d|-\d,\d|\d,\d|\d\d,\d)",
             "(\d*,\d*|--)",
-            "",
+            "(-\d\d,\d|-\d,\d|\d,\d|\d\d,\d|--)",
             "(\d,\d|\d\d,\d|\d\d\d,\d)",
             "(\d\d)",
-            "",
-            "(\d.\d\d\d|--)",
-            "",
-            "",
+            "(\w\w|\w|\w\w\w)",
+            "(\d.\d\d\d|--)"
             ]
 
         dataIdDict = dict()
 
-        for dataIdIdx in range(9):
+        for dataIdIdx in range(len(descDataId)):
 
-            if descDataId[dataIdIdx]:
-                dataId = dataIdBasis + str(dataIdIdx + 1)   
-                dataRaw = stationSoup.find("div", attrs={"data-id": dataId})
+            groupDict = dict()
+            dataId = dataIdBasis + str(dataIdIdx + 1)   
+            dataRaw = stationSoup.find("div", attrs={"data-id": dataId})
 
-                dataRawSoup = BeautifulSoup(str(dataRaw),'html.parser')
+            dataRawSoup = BeautifulSoup(str(dataRaw),'html.parser')
 
-                groupDict = dict()
-                
+            if descDataId[dataIdIdx]== "dewPoint" or descDataId[dataIdIdx]== "windDirection":
+                # read info from script tag
+                elementContainerRaw = dataRawSoup.find("div",class_="element-container")
+
+                currValue = re.findall("currentValue\":\s\"" + regeexpList[dataIdIdx], str(elementContainerRaw))[0]
+
+                groupDict["curr"+descDataId[dataIdIdx]] = currValue
+            
+            else:
+                # read info from row tag including min max values
                 currentHeaderRaw = dataRawSoup.find("div", class_="fallback-title").get_text()
                 currentHeader = re.findall(regeexpList[dataIdIdx], currentHeaderRaw)[0]
 
@@ -171,16 +177,16 @@ class handleWetterringRequest:
                     groupDataRawList = groupSoup.find_all("div",class_=re.compile("col\w*"))
 
                     dataIdx = 0
-                    descListData = ["value","","desc","time"]
+                    descListData = ["value","","","time"]
 
                     for dataRaw in groupDataRawList:
-                        if descListData[dataIdx] and descListData[dataIdx] != "desc":
+                        if descListData[dataIdx]:
                             valueDict[descListData[dataIdx]] = dataRaw.get_text()
                         dataIdx += 1
                     
                     groupDict[descListGroup[groupIdx]] = valueDict
                     groupIdx += 1
-                
-                dataIdDict[descDataId[dataIdIdx]] = groupDict
+
+            dataIdDict[descDataId[dataIdIdx]] = groupDict
             
         return dataIdDict
