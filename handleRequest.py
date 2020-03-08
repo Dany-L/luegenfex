@@ -6,17 +6,15 @@ import re
 import json
 
 
-class handleRequest:
+class handleBergfexRequest:
 
-    def __init__(self,resortList,rootUrl,postFixUrl):
-        self.resortList = resortList
-        self.rootUrl = rootUrl
-        self.postFixUrl = postFixUrl
+    rootUrl = "https://www.bergfex.at/"
+    postFixUrl = "/wetter/prognose"
 
-    def getWeatherDataList(self):
+    def getWeatherDataList(self,resortList):
         weatherDataDict = dict()
         # iterate over all resorts
-        for resort in self.resortList:
+        for resort in resortList:
             resortInfoDict = self.getWeatherData(resort)
             weatherDataDict[resort] = resortInfoDict
 
@@ -25,11 +23,18 @@ class handleRequest:
 
     def getWeatherData(self,resort):
 
+        # create complete url
         resortUrl = self.rootUrl + resort + self.postFixUrl
         request = requests.get(url = resortUrl)
+        # beautiful soup to parse html
         resortSoup = BeautifulSoup(request.text, 'html.parser')
 
-        # now
+        # get altitude
+        elevationDict = dict()
+        elevationDict["top"] = self.getAltitude("label-berg",resortSoup)
+        elevationDict["bottom"] = self.getAltitude("label-tal",resortSoup)
+
+        # get todays date
         date = datetime.datetime.now()
 
         # initialize weather dict
@@ -40,13 +45,10 @@ class handleRequest:
             # date of day
             dateDay = date + datetime.timedelta(days=day)
             
-            idStr = "forecast-day-" + str(day)
-            forecastDayRaw = resortSoup.find("div", id=idStr)
-            forecastDayRawSoup = BeautifulSoup(str(forecastDayRaw), 'html.parser')
-
+            # values of keys represent div tags with class = <value>
             dataDict = {
-                "mountain": ["tmax","tmin","nschnee"],
-                "valley": ["tmax","tmin","nschnee"],
+                "mountain " + elevationDict["top"]: ["tmax","tmin","nschnee"],
+                "valley " + elevationDict["bottom"]: ["tmax","tmin","nschnee"],
                 "rainProb": ["rrp"],
                 "rainAmountSun": ["rrr","sonne"],
                 "snowLine": [],
@@ -54,6 +56,12 @@ class handleRequest:
                 "wind": ["ff"]
             }
 
+            # get day forcast string
+            idStr = "forecast-day-" + str(day)
+            forecastDayRaw = resortSoup.find("div", id=idStr)
+            forecastDayRawSoup = BeautifulSoup(str(forecastDayRaw), 'html.parser')
+
+            # get all div tags with class = "group*"
             groupRawList = forecastDayRawSoup.find_all("div",class_="group")
             groupIdx = 0
 
@@ -64,19 +72,28 @@ class handleRequest:
 
                 groupSoup = BeautifulSoup(str(groupRawList[groupIdx]),'html.parser')
 
+                # parse group html tag, to get values
                 valueDict = self.getGroupData(groupSoup,dataDict[dataName])
-
                 detailsDict[dataName] = valueDict
-
                 groupIdx += 1
 
             weatherDict[dateDay.strftime('%d_%m_%Y')] = detailsDict
 
         return weatherDict
+
+
+    def getAltitude(self,className,soup):
+        divRaw = soup.find("div", class_=className)
+        divRawSoup = BeautifulSoup(str(divRaw), 'html.parser')
+        elevationRaw = divRawSoup.find("div", class_="elevation")
+        elevation = re.sub(".","",elevationRaw.get_text())
+        return elevation
      
 
     def getGroupData(self,groupSoup,classList):
+
         groupDataDict = dict()
+        # snowline is organized differently
         if not classList:
             data = re.sub("\n","",groupSoup.get_text())
             groupDataDict["snowLine"] = data
@@ -91,15 +108,4 @@ class handleRequest:
                 groupDataDict[className] = data
         return groupDataDict
 
-
-resortsList = ["diedamskopf","mellau"]
-rootUrl = "https://www.bergfex.at/"
-postFixUrl = "/wetter/prognose"
-outFile = "weatherData.json"
-
-oHandleRequest = handleRequest(resortsList,rootUrl,postFixUrl)
-weatherData = oHandleRequest.getWeatherDataList()
-
-with open(outFile, 'w') as outfile:
-    json.dump(weatherData, outfile)
 
