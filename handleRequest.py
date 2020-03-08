@@ -108,4 +108,79 @@ class handleBergfexRequest:
                 groupDataDict[className] = data
         return groupDataDict
 
+class handleWetterringRequest:
 
+    rootUrl = "https://wetterring.at/wetterstationen/detail/"
+
+    def getWeatherStationDataList(self,stationList):
+        stationDetailDict = dict()
+        for station in stationList:
+            stationDetailDict[station] = self.getStationDetails(station)
+
+        return stationDetailDict
+
+    def getStationDetails(self, station):
+        
+        stationUrl = self.rootUrl + "/" + station
+        request = requests.get(url = stationUrl)
+        # beautiful soup to parse html
+        stationSoup = BeautifulSoup(request.text, 'html.parser')
+
+        dataIdBasis = "237"
+
+        descDataId = ["temp","rainfall","","wind","humidity","","airPressure","",""]
+        regeexpList = [
+            "(-\d\d,\d|-\d,\d|\d,\d|\d\d,\d)",
+            "(\d*,\d*|--)",
+            "",
+            "(\d,\d|\d\d,\d|\d\d\d,\d)",
+            "(\d\d)",
+            "",
+            "(\d.\d\d\d|--)",
+            "",
+            "",
+            ]
+
+        dataIdDict = dict()
+
+        for dataIdIdx in range(9):
+
+            if descDataId[dataIdIdx]:
+                dataId = dataIdBasis + str(dataIdIdx + 1)   
+                dataRaw = stationSoup.find("div", attrs={"data-id": dataId})
+
+                dataRawSoup = BeautifulSoup(str(dataRaw),'html.parser')
+
+                groupDict = dict()
+                
+                currentHeaderRaw = dataRawSoup.find("div", class_="fallback-title").get_text()
+                currentHeader = re.findall(regeexpList[dataIdIdx], currentHeaderRaw)[0]
+
+                groupDict["curr"+descDataId[dataIdIdx]] = currentHeader
+
+                groupRawList = dataRawSoup.find_all("div", class_="row")
+
+                descListGroup = ["dayMax","dayMin","monthMax","monthMin","yearMax","yearMin"]
+                
+                groupIdx = 0
+                for groupRaw in groupRawList:
+
+                    valueDict = dict()
+                    groupSoup = BeautifulSoup(str(groupRaw),'html.parser')
+
+                    groupDataRawList = groupSoup.find_all("div",class_=re.compile("col\w*"))
+
+                    dataIdx = 0
+                    descListData = ["value","","desc","time"]
+
+                    for dataRaw in groupDataRawList:
+                        if descListData[dataIdx] and descListData[dataIdx] != "desc":
+                            valueDict[descListData[dataIdx]] = dataRaw.get_text()
+                        dataIdx += 1
+                    
+                    groupDict[descListGroup[groupIdx]] = valueDict
+                    groupIdx += 1
+                
+                dataIdDict[descDataId[dataIdIdx]] = groupDict
+            
+        return dataIdDict
