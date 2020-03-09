@@ -12,14 +12,13 @@ class handleBergfexRequest:
     postFixUrl = "/wetter/prognose"
 
     def getWeatherDataList(self,resortList):
-        weatherDataDict = dict()
+        weatherDataList = []
         # iterate over all resorts
         for resort in resortList:
-            resortInfoDict = self.getWeatherData(resort)
-            weatherDataDict[resort] = resortInfoDict
+            weatherDataList.append(self.getWeatherData(resort))
 
         # return weather dict
-        return weatherDataDict
+        return weatherDataList
 
     def getWeatherData(self,resort):
 
@@ -77,7 +76,9 @@ class handleBergfexRequest:
                 detailsDict[dataName] = valueDict
                 groupIdx += 1
 
-            weatherDict[dateDay.strftime('%d_%m_%Y')] = detailsDict
+            weatherDict[dateDay.strftime('%y_%m_%d')] = detailsDict
+            weatherDict["resort"] = resort
+            weatherDict["time"] = date.strftime("%y_%m_%d_%H_%M")
 
         return weatherDict
 
@@ -113,11 +114,11 @@ class handleWetterringRequest:
     rootUrl = "https://wetterring.at/wetterstationen/detail/"
 
     def getWeatherStationDataList(self,stationList):
-        stationDetailDict = dict()
+        stationDetailList = []
         for station in stationList:
-            stationDetailDict[station] = self.getStationDetails(station)
+            stationDetailList.append(self.getStationDetails(station))
 
-        return stationDetailDict
+        return stationDetailList
 
     def getStationDetails(self, station):
         
@@ -187,6 +188,10 @@ class handleWetterringRequest:
                     groupDict[descListGroup[groupIdx]] = valueDict
                     groupIdx += 1
 
+            date = datetime.datetime.now()
+
             dataIdDict[descDataId[dataIdIdx]] = groupDict
+            dataIdDict["station"] = station
+            dataIdDict["time"] = date.strftime("%y_%m_%d_%H_%M")
             
         return dataIdDict
