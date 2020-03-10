@@ -29,9 +29,9 @@ class handleBergfexRequest:
         resortSoup = BeautifulSoup(request.text, 'html.parser')
 
         # get altitude
-        elevationDict = dict()
-        elevationDict["top"] = self.getAltitude("label-berg",resortSoup)
-        elevationDict["bottom"] = self.getAltitude("label-tal",resortSoup)
+        elevationList = []
+        elevationList.append(self.getAltitude("label-berg",resortSoup))
+        elevationList.append(self.getAltitude("label-tal",resortSoup))
 
         # get todays date
         date = datetime.datetime.now()
@@ -46,8 +46,8 @@ class handleBergfexRequest:
             
             # values of keys represent div tags with class = <value>
             dataDict = {
-                "mountain " + elevationDict["top"]: ["tmax","tmin","nschnee"],
-                "valley " + elevationDict["bottom"]: ["tmax","tmin","nschnee"],
+                "mountain ": ["tmax","tmin","nschnee"],
+                "valley ": ["tmax","tmin","nschnee"],
                 "rainProb": ["rrp"],
                 "rainAmountSun": ["rrr","sonne"],
                 "snowLine": [],
@@ -79,6 +79,7 @@ class handleBergfexRequest:
             weatherDict[dateDay.strftime('%y_%m_%d')] = detailsDict
             weatherDict["resort"] = resort
             weatherDict["time"] = date.strftime("%y_%m_%d_%H_%M")
+            weatherDict["elevation"] = elevationList
 
         return weatherDict
 
@@ -87,8 +88,9 @@ class handleBergfexRequest:
         divRaw = soup.find("div", class_=className)
         divRawSoup = BeautifulSoup(str(divRaw), 'html.parser')
         elevationRaw = divRawSoup.find("div", class_="elevation")
-        elevation = re.sub(".","",elevationRaw.get_text())
-        return elevation
+        elevation = re.sub("\.","",elevationRaw.get_text())
+        elevation = re.sub("m","",elevation)
+        return int(elevation)
      
 
     def getGroupData(self,groupSoup,classList):

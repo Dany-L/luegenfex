@@ -7,3 +7,6 @@ installed locally https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ub
 
 ## beautiful Soup - html parser
 * [documentatioin](https://www.crummy.com/software/BeautifulSoup/bs4/doc/)
+
+## python tutorial mongoDB
+* [MongoDB RESTful API with Flask](https://www.bogotobogo.com/python/MongoDB_PyMongo/python_MongoDB_RESTAPI_with_Flask.php)

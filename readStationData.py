@@ -2,8 +2,6 @@ import handleRequest
 import pymongo
 import datetime
 
-fId = open("request.log","a")
-
 # get data from weather stations
 stationDataList = []
 wetterringList = ["mellau-rossstelle","damuels-jaegerstueble","damuels-hertehof","diedamskopf"]
@@ -12,9 +10,9 @@ now = datetime.datetime.now()
 try:
     stationDataList = oWetterringRequest.getWeatherStationDataList(wetterringList)
 except:
-    fId.write(now.strftime("%y.%m.%d %H:%M") + " Error: Could not read station data due to an error\n")
+    print(now.strftime("%y.%m.%d %H:%M") + " Error: Could not read station data due to an error")
 else:
-    fId.write(now.strftime("%y.%m.%d %H:%M") + " Trace: Data was received \n")
+    print(now.strftime("%y.%m.%d %H:%M") + " Trace: Data was received)
 
 # write data to mongo db
 mongoDbClient = pymongo.MongoClient("mongodb://localhost:27017")
@@ -26,10 +24,10 @@ now = datetime.datetime.now()
 try:
     col.insert_many(stationDataList)
 except:
-    fId.write(now.strftime("%y.%m.%d %H:%M") + " Error: Data could not be saved to database \n")
+    print(now.strftime("%y.%m.%d %H:%M") + " Error: Data could not be saved to database")
 else:
-    fId.write(now.strftime("%y.%m.%d %H:%M") + " Trace: Data was written to " + dbName +  " " + collectionName + "\n")
-fId.close()
+    print(now.strftime("%y.%m.%d %H:%M") + " Trace: Data was written to " + dbName +  " " + collectionName)
+
 
 
 
