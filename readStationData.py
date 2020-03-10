@@ -12,7 +12,7 @@ try:
 except:
     print(now.strftime("%y.%m.%d %H:%M") + " Error: Could not read station data due to an error")
 else:
-    print(now.strftime("%y.%m.%d %H:%M") + " Trace: Data was received)
+    print(now.strftime("%y.%m.%d %H:%M") + " Trace: Data was received")
 
 # write data to mongo db
 mongoDbClient = pymongo.MongoClient("mongodb://localhost:27017")
